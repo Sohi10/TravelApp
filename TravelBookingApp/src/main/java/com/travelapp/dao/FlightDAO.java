@@ -5,11 +5,11 @@ import com.travelapp.util.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FlightDAO {
-
 
     public void addFlight(Flight flight) {
         String sql = "INSERT INTO Flight (origin, destination, departure_time, arrival_time, price) VALUES (?, ?, ?, ?, ?)";
@@ -40,7 +40,6 @@ public class FlightDAO {
             try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
         }
     }
-
 
     public List<Flight> searchFlights(String origin, String destination, LocalDateTime departureDate) {
         List<Flight> flights = new ArrayList<>();
@@ -74,7 +73,7 @@ public class FlightDAO {
                 } else if (param instanceof java.sql.Date) {
                     pstmt.setDate(i + 1, (java.sql.Date) param);
                 }
-                
+                // Add other types if necessary
             }
 
             rs = pstmt.executeQuery();
@@ -131,5 +130,58 @@ public class FlightDAO {
             DBConnection.closeConnection(conn);
         }
         return flight;
+    }
+
+    // Update Flight
+    public boolean updateFlight(Flight flight) {
+        String sql = "UPDATE Flight SET origin = ?, destination = ?, departure_time = ?, arrival_time = ?, price = ? WHERE flight_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, flight.getOrigin());
+            pstmt.setString(2, flight.getDestination());
+            pstmt.setTimestamp(3, Timestamp.valueOf(flight.getDepartureTime()));
+            pstmt.setTimestamp(4, Timestamp.valueOf(flight.getArrivalTime()));
+            pstmt.setDouble(5, flight.getPrice());
+            pstmt.setInt(6, flight.getFlightId());
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating flight: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
+
+    //  Delete Flight
+    public boolean deleteFlight(int flightId) {
+        String sql = "DELETE FROM Flight WHERE flight_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, flightId);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting flight: " + e.getMessage());
+            System.err.println("Note: Cannot delete flight if there are associated bookings (due to foreign key constraints).");
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
+
+    //  Get all flights
+    public List<Flight> getAllFlights() {
+        return searchFlights(null, null, null); // Calling search with nulls to get all
     }
 }

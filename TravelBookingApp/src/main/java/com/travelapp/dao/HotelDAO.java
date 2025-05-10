@@ -9,7 +9,6 @@ import java.util.List;
 
 public class HotelDAO {
 
-    
     public void addHotel(Hotel hotel) {
         String sql = "INSERT INTO Hotel (name, city, price_per_night) VALUES (?, ?, ?)";
         Connection conn = null;
@@ -78,5 +77,87 @@ public class HotelDAO {
             DBConnection.closeConnection(conn);
         }
         return hotels;
+    }
+
+    public Hotel getHotelById(int hotelId) {
+        String sql = "SELECT hotel_id, name, city, price_per_night FROM Hotel WHERE hotel_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Hotel hotel = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, hotelId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                hotel = new Hotel(
+                        rs.getInt("hotel_id"),
+                        rs.getString("name"),
+                        rs.getString("city"),
+                        rs.getDouble("price_per_night")
+                );
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching hotel by ID: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) { /* ignore */ }
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+            DBConnection.closeConnection(conn);
+        }
+        return hotel;
+    }
+
+    // Update Hotel
+    public boolean updateHotel(Hotel hotel) {
+        String sql = "UPDATE Hotel SET name = ?, city = ?, price_per_night = ? WHERE hotel_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, hotel.getName());
+            pstmt.setString(2, hotel.getCity());
+            pstmt.setDouble(3, hotel.getPricePerNight());
+            pstmt.setInt(4, hotel.getHotelId());
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating hotel: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
+
+    // Delete Hotel
+    public boolean deleteHotel(int hotelId) {
+        String sql = "DELETE FROM Hotel WHERE hotel_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, hotelId);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting hotel: " + e.getMessage());
+            System.err.println("Note: Cannot delete hotel if there are associated bookings (due to foreign key constraints).");
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
+
+    //  Get all hotels 
+    public List<Hotel> getAllHotels() {
+        return searchHotels(null); // Calling search with null to get all
     }
 }

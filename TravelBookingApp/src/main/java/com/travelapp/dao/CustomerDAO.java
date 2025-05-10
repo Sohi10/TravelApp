@@ -97,4 +97,50 @@ public class CustomerDAO {
         }
         return customer;
     }
+
+    // Update Customer
+    public boolean updateCustomer(Customer customer) {
+        String sql = "UPDATE Customer SET name = ?, email = ?, phone = ? WHERE customer_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, customer.getName());
+            pstmt.setString(2, customer.getEmail());
+            pstmt.setString(3, customer.getPhone());
+            pstmt.setInt(4, customer.getCustomerId());
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating customer: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
+
+    //  Delete Customer
+    public boolean deleteCustomer(int customerId) {
+        String sql = "DELETE FROM Customer WHERE customer_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, customerId);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting customer: " + e.getMessage());
+            System.err.println("Note: Cannot delete customer if there are associated bookings (due to foreign key constraints).");
+            e.printStackTrace();
+            return false;
+        } finally {
+            DBConnection.closeConnection(conn);
+            try { if (pstmt != null) pstmt.close(); } catch (SQLException e) { /* ignore */ }
+        }
+    }
 }
