@@ -30,6 +30,9 @@ mysql -u admin -p
 
 USE travel_booking_db;
 
+Run Project executable.jar 
+
+OR
 
 run the following commands to start the app
 1. mvn clean package  ->  (always run after making changes to a file to update the build)
